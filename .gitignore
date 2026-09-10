@@ -1,0 +1,8 @@
+# Temporary files & logs
+*.log
+*.tmp
+*.bak
+
+# IDE / Editor folders
+.vs/
+.vscode/
