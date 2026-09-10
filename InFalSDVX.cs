@@ -79,24 +79,35 @@ namespace InFalSDVX
         private IntPtr _hookID = IntPtr.Zero;
 
         // Settings
-        private Keys keyLeft = Keys.Q;
-        private Keys keyRight = Keys.E;
+        private Keys keyLeft  = Keys.Q;
+        private Keys keyLeft2 = Keys.A;
+        private Keys keyRight  = Keys.E;
+        private Keys keyRight2 = Keys.D;
         private Keys keyToggle = Keys.F8;
 
         private bool isEnabled = true;
-        private bool isLeftPressed = false;
+        private bool isLeftPressed  = false;
+        private bool isLeft2Pressed  = false;
         private bool isRightPressed = false;
+        private bool isRight2Pressed = false;
         private volatile bool isRunning = true;
 
         private int moveSpeed = 15;
         private System.Threading.Thread moveThread;
         private NotifyIcon trayIcon;
 
+        private static readonly string SettingsPath =
+            System.IO.Path.Combine(
+                System.IO.Path.GetDirectoryName(Application.ExecutablePath),
+                "settings.ini");
+
         // Minimalist UI Elements
         private Label lblStatus;
         private Button btnToggle;
         private Button btnBindLeft;
+        private Button btnBindLeft2;
         private Button btnBindRight;
+        private Button btnBindRight2;
         private TrackBar tbSpeed;
         private Label lblSpeed;
         private TextBox txtLog;
@@ -105,6 +116,7 @@ namespace InFalSDVX
 
         public MainForm()
         {
+            LoadSettings();
             InitializeComponent();
             _proc = HookCallback;
             _hookID = SetHook(_proc);
@@ -115,6 +127,51 @@ namespace InFalSDVX
             moveThread.Start();
 
             Log("Ready. Remapper: ACTIVE");
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                var lines = new System.Text.StringBuilder();
+                lines.AppendLine("[Keys]");
+                lines.AppendLine("Left="  + (int)keyLeft);
+                lines.AppendLine("Left2=" + (int)keyLeft2);
+                lines.AppendLine("Right="  + (int)keyRight);
+                lines.AppendLine("Right2=" + (int)keyRight2);
+                lines.AppendLine("[Speed]");
+                lines.AppendLine("Value=" + moveSpeed);
+                System.IO.File.WriteAllText(SettingsPath, lines.ToString());
+            }
+            catch { }
+        }
+
+        private void LoadSettings()
+        {
+            if (!System.IO.File.Exists(SettingsPath)) return;
+            try
+            {
+                foreach (var raw in System.IO.File.ReadAllLines(SettingsPath))
+                {
+                    var line = raw.Trim();
+                    if (line.StartsWith("[") || line.Length == 0) continue;
+                    var parts = line.Split('=');
+                    if (parts.Length != 2) continue;
+                    var key = parts[0].Trim();
+                    var val = parts[1].Trim();
+                    int num;
+                    if (!int.TryParse(val, out num)) continue;
+                    switch (key)
+                    {
+                        case "Left":   keyLeft   = (Keys)num; break;
+                        case "Left2":  keyLeft2  = (Keys)num; break;
+                        case "Right":  keyRight  = (Keys)num; break;
+                        case "Right2": keyRight2 = (Keys)num; break;
+                        case "Value":  moveSpeed = Math.Max(1, Math.Min(60, num)); break;
+                    }
+                }
+            }
+            catch { }
         }
 
         private static void InjectMouseMove(int dx, int dy)
@@ -138,7 +195,7 @@ namespace InFalSDVX
         private void InitializeComponent()
         {
             this.Text = "InFalSDVX";
-            this.Size = new Size(320, 255);
+            this.Size = new Size(320, 295);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
@@ -171,7 +228,7 @@ namespace InFalSDVX
             btnToggle.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 70);
             btnToggle.Click += (s, e) => ToggleRemapper(!isEnabled);
 
-            // Keybindings Section
+            // Keybindings Section — Row 1
             Label lblLeft = new Label { Text = "Left:", Location = new Point(14, 50), AutoSize = true, ForeColor = Color.FromArgb(180, 180, 180) };
             btnBindLeft = new Button
             {
@@ -204,13 +261,46 @@ namespace InFalSDVX
             btnBindRight.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 70);
             btnBindRight.Click += (s, e) => StartBinding(btnBindRight);
 
+            // Keybindings Section — Row 2 (alternate keys)
+            Label lblLeft2 = new Label { Text = "Left2:", Location = new Point(14, 82), AutoSize = true, ForeColor = Color.FromArgb(180, 180, 180) };
+            btnBindLeft2 = new Button
+            {
+                Text = keyLeft2.ToString(),
+                Location = new Point(60, 78),
+                Size = new Size(64, 24),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(45, 45, 45),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnBindLeft2.FlatAppearance.BorderSize = 1;
+            btnBindLeft2.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 70);
+            btnBindLeft2.Click += (s, e) => StartBinding(btnBindLeft2);
+
+            Label lblRight2 = new Label { Text = "Right2:", Location = new Point(148, 82), AutoSize = true, ForeColor = Color.FromArgb(180, 180, 180) };
+            btnBindRight2 = new Button
+            {
+                Text = keyRight2.ToString(),
+                Location = new Point(200, 78),
+                Size = new Size(90, 24),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(45, 45, 45),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnBindRight2.FlatAppearance.BorderSize = 1;
+            btnBindRight2.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 70);
+            btnBindRight2.Click += (s, e) => StartBinding(btnBindRight2);
+
             // Speed Section
             lblSpeed = new Label
             {
                 Text = "Speed: 15 px/tick",
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Regular),
                 ForeColor = Color.FromArgb(180, 180, 180),
-                Location = new Point(14, 82),
+                Location = new Point(14, 114),
                 AutoSize = true
             };
 
@@ -219,7 +309,7 @@ namespace InFalSDVX
                 Minimum = 1,
                 Maximum = 60,
                 Value = moveSpeed,
-                Location = new Point(10, 100),
+                Location = new Point(10, 132),
                 Size = new Size(284, 30),
                 TickStyle = TickStyle.None
             };
@@ -232,7 +322,7 @@ namespace InFalSDVX
             // Log Section
             txtLog = new TextBox
             {
-                Location = new Point(14, 136),
+                Location = new Point(14, 168),
                 Size = new Size(276, 70),
                 Multiline = true,
                 ReadOnly = true,
@@ -251,6 +341,10 @@ namespace InFalSDVX
             this.Controls.Add(btnBindLeft);
             this.Controls.Add(lblRight);
             this.Controls.Add(btnBindRight);
+            this.Controls.Add(lblLeft2);
+            this.Controls.Add(btnBindLeft2);
+            this.Controls.Add(lblRight2);
+            this.Controls.Add(btnBindRight2);
             this.Controls.Add(lblSpeed);
             this.Controls.Add(tbSpeed);
             this.Controls.Add(txtLog);
@@ -278,7 +372,7 @@ namespace InFalSDVX
             };
             trayIcon.DoubleClick += (s, e) => { this.Show(); this.WindowState = FormWindowState.Normal; };
 
-            this.FormClosing += (s, e) => { isRunning = false; UnhookWindowsHookEx(_hookID); trayIcon.Dispose(); };
+            this.FormClosing += (s, e) => { SaveSettings(); isRunning = false; UnhookWindowsHookEx(_hookID); trayIcon.Dispose(); };
             this.KeyPreview = true;
             this.KeyDown += MainForm_KeyDown;
         }
@@ -313,11 +407,23 @@ namespace InFalSDVX
                     btnBindLeft.Text = keyLeft.ToString();
                     Log("Left bound: " + keyLeft);
                 }
+                else if (bindingTarget == btnBindLeft2)
+                {
+                    keyLeft2 = newKey;
+                    btnBindLeft2.Text = keyLeft2.ToString();
+                    Log("Left2 bound: " + keyLeft2);
+                }
                 else if (bindingTarget == btnBindRight)
                 {
                     keyRight = newKey;
                     btnBindRight.Text = keyRight.ToString();
                     Log("Right bound: " + keyRight);
+                }
+                else if (bindingTarget == btnBindRight2)
+                {
+                    keyRight2 = newKey;
+                    btnBindRight2.Text = keyRight2.ToString();
+                    Log("Right2 bound: " + keyRight2);
                 }
 
                 bindingTarget.BackColor = Color.FromArgb(45, 45, 45);
@@ -354,8 +460,10 @@ namespace InFalSDVX
             {
                 lblStatus.Text = "Status: DISABLED";
                 lblStatus.ForeColor = Color.FromArgb(140, 140, 140);
-                isLeftPressed = false;
+                isLeftPressed  = false;
+                isLeft2Pressed  = false;
                 isRightPressed = false;
+                isRight2Pressed = false;
                 Log("Remapper DISABLED");
             }
         }
@@ -367,8 +475,8 @@ namespace InFalSDVX
                 if (isEnabled)
                 {
                     int deltaX = 0;
-                    if (isLeftPressed) deltaX -= moveSpeed;
-                    if (isRightPressed) deltaX += moveSpeed;
+                    if (isLeftPressed || isLeft2Pressed) deltaX -= moveSpeed;
+                    if (isRightPressed || isRight2Pressed) deltaX += moveSpeed;
 
                     if (deltaX != 0)
                     {
@@ -422,6 +530,22 @@ namespace InFalSDVX
                         }
                         return (IntPtr)1;
                     }
+                    else if (key == keyLeft2)
+                    {
+                        if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
+                        {
+                            if (!isLeft2Pressed)
+                            {
+                                isLeft2Pressed = true;
+                                InjectMouseMove(-moveSpeed * 2, 0);
+                            }
+                        }
+                        else if (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
+                        {
+                            isLeft2Pressed = false;
+                        }
+                        return (IntPtr)1;
+                    }
                     else if (key == keyRight)
                     {
                         if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
@@ -435,6 +559,22 @@ namespace InFalSDVX
                         else if (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
                         {
                             isRightPressed = false;
+                        }
+                        return (IntPtr)1;
+                    }
+                    else if (key == keyRight2)
+                    {
+                        if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
+                        {
+                            if (!isRight2Pressed)
+                            {
+                                isRight2Pressed = true;
+                                InjectMouseMove(moveSpeed * 2, 0);
+                            }
+                        }
+                        else if (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
+                        {
+                            isRight2Pressed = false;
                         }
                         return (IntPtr)1;
                     }
