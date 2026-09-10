@@ -4,7 +4,7 @@ Simple and lightweight keyboard-to-mouse input remapper for the rhythm game **In
 
 ---
 
-## 🚀 Quick Start Guide
+##  Quick Start Guide
 
 1. Open folder `c:\Users\ADMIN\Desktop\InFalSDVX`.
 2. Run **`InFalSDVX.exe`**.
@@ -16,7 +16,7 @@ Simple and lightweight keyboard-to-mouse input remapper for the rhythm game **In
 
 ---
 
-## ⚙️ Features
+##  Features
 
 - **Custom Keybindings**: Click any key button in the app UI and press a new key to rebind.
 - **Mouse Speed Slider**: Adjust mouse movement speed (1 to 60 px/tick).
@@ -25,7 +25,7 @@ Simple and lightweight keyboard-to-mouse input remapper for the rhythm game **In
 
 ---
 
-## 📝 Debug Log Example
+##  Debug Log Example
 
 When you press keys or change settings, the debug log will show:
 
@@ -41,6 +41,6 @@ When you press keys or change settings, the debug log will show:
 
 ---
 
-## 🛠️ Rebuilding from Source
+##  Rebuilding from Source
 
 If you edit `InFalSDVX.cs`, double-click **`build.bat`** to recompile `InFalSDVX.exe` instantly.
